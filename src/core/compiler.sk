@@ -2,6 +2,7 @@ namespace GLSLX {
   enum OutputFormat {
     JSON
     JS
+    JAVA
     CPP
     SKEW
     RUST
@@ -19,6 +20,12 @@ namespace GLSLX {
     var renameSymbols = RenameSymbols.ALL
     var trimSymbols = true
     var fileAccess fn(string, string) Source = null
+  }
+
+  class CompilerOutputOptions {
+    var format OutputFormat
+    var className string = "GLSLXShader"
+    var packageName string = null
   }
 
   enum ExtensionBehavior {
@@ -48,8 +55,8 @@ namespace GLSLX {
     const shaders List<Source>
     const renaming StringMap<string>
 
-    def output(format OutputFormat) string {
-      switch format {
+    def output(outputOptions CompilerOutputOptions) string {
+      switch outputOptions.format {
         case .JSON {
           var map dynamic = {}
           renaming.keys.each(key => map[key] = renaming[key])
@@ -74,6 +81,30 @@ namespace GLSLX {
                 code += "export const GLSLX_NAME_\(_transformName(name)) = \(dynamic.JSON.stringify(renaming[name]))\n"
               }
             }
+            return code
+          }
+        }
+
+        case .JAVA {
+          if shaders != null {
+            var code = ""
+            if outputOptions.packageName != null {
+                code += "package \(outputOptions.packageName);\n"
+                code += "\n"
+            }
+            code += "public class \(outputOptions.className) {\n"
+            code += "private \(outputOptions.className)() {}\n"
+            code += "\n"
+            for shader in shaders {
+              code += "public static final String SOURCE_\(_transformName(shader.name)) = \(dynamic.JSON.stringify(shader.contents));\n"
+            }
+            if renaming != null {
+              code += "\n"
+              for name in renaming.keys {
+                code += "public static final String NAME_\(_transformName(name)) = \(dynamic.JSON.stringify(renaming[name]));\n"
+              }
+            }
+            code += "}\n"
             return code
           }
         }

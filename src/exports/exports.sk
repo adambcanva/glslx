@@ -11,6 +11,7 @@ namespace GLSLX.Exports {
   const outputFormats StringMap<OutputFormat> = {
     "json": .JSON,
     "js": .JS,
+    "java": .JAVA,
     "c++": .CPP,
     "skew": .SKEW,
     "rust": .RUST,
@@ -30,7 +31,7 @@ Usage: glslx [sources] [flags]
     Set the path to the output file. Defaults to standard out.
 
   --format=FORMAT
-    Set the output format, must be json, js, c++, skew or rust. Defaults to json.
+    Set the output format, must be json, js, java, c++, skew or rust. Defaults to json.
 
 Advanced:
 
@@ -45,6 +46,12 @@ Advanced:
 
   --keep-symbols
     Don't inline constants or remove unused symbols.
+
+  --class-name
+    Specify the class name (only applicable to the following languages: Java)
+
+  --package-name
+    Specify the package name (only applicable to the following languages: Java) Defaults to GLSLXShader
 ")
   }
 
@@ -169,9 +176,16 @@ Advanced:
     if args.fileAccess { options.fileAccess = wrapFileAccess(args.fileAccess) }
 
     var result = Compiler.compile(log, sources, options)
+
+    var outputOptions = CompilerOutputOptions.new(outputFormats.get(args.format, .JSON))
+    if args.className != null {
+      outputOptions.className = args.className
+    }
+    outputOptions.packageName = args.packageName
+
     return {
       "log": log.toString,
-      "output": result != null ? result.output(outputFormats.get(args.format, .JSON)) : null,
+      "output": result != null ? result.output(outputOptions) : null,
     }
   }
 
@@ -459,6 +473,8 @@ Advanced:
     var sources List<Source> = []
     var outputFormat = OutputFormat.JSON
     var outputPath string = null
+    var className string =  null
+    var packageName string = null
     var fs = require("fs")
     var path = require("path")
 
@@ -506,6 +522,14 @@ Advanced:
             outputFormat = outputFormats[text]
           }
 
+          else if arg.startsWith("--class-name=") {
+            className = arg.slice("--class-name=".count)
+          }
+
+          else if arg.startsWith("--package-name=") {
+            packageName = arg.slice("--package-name=".count)
+          }
+
           else if arg.startsWith("--renaming=") {
             var text = arg.slice("--renaming=".count)
             if !(text in renameSymbols) {
@@ -532,11 +556,15 @@ Advanced:
     var result = Compiler.compile(log, sources, options)
 
     if result != null {
+      var outputOptions = CompilerOutputOptions.new(outputFormat)
+      outputOptions.className = className
+      outputOptions.packageName = packageName
+
       if outputPath != null {
-        fs.writeFileSync(outputPath, result.output(outputFormat))
+        fs.writeFileSync(outputPath, result.output(outputOptions))
         printLogWithColor(log)
       } else {
-        process.stdout.write(result.output(outputFormat))
+        process.stdout.write(result.output(outputOptions))
       }
     } else {
       printLogWithColor(log)

@@ -2,7 +2,7 @@ export type CompileInput = string | { name: string, contents: string } | { name:
 export type FileAccess = (filePath: string, relativeTo: string) => (null | string | { name: string, contents: string });
 
 export interface CompileArgs {
-  format?: 'json' | 'js' | 'c++' | 'skew' | 'rust'; // Default: 'json'
+  format?: 'json' | 'js' | 'java' | 'c++' | 'skew' | 'rust'; // Default: 'json'
   renaming?: 'all' | 'internal-only' | 'none'; // Default: 'all'
   disableRewriting?: boolean; // Default: false
   prettyPrint?: boolean; // Default: false

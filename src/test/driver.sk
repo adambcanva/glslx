@@ -3,7 +3,8 @@ namespace GLSLX.Tests {
     var _input string
     var _expected string
     var _options = CompilerOptions.new
-    var _outputFormat Box<OutputFormat> = null
+    var _outputOptions = CompilerOutputOptions.new(OutputFormat.JSON)
+    var _outputEnabled = false
 
     over run {
       rename(compactWhitespace(_input))
@@ -12,8 +13,8 @@ namespace GLSLX.Tests {
       var output = log.toString
 
       if result != null {
-        if _outputFormat != null {
-          output = result.output(_outputFormat.value)
+        if _outputEnabled {
+          output = result.output(_outputOptions)
         }
 
         else if !result.shaders.isEmpty {
@@ -57,13 +58,25 @@ namespace GLSLX.Tests {
       return self
     }
 
+    def className(className string) CompilerTest {
+      _outputOptions.className = className
+      return self
+    }
+
+    def packageName(packageName string) CompilerTest {
+      _outputOptions.packageName = packageName
+      return self
+    }
+
     def fileAccess(callback fn(string, string) Source) CompilerTest {
       _options.fileAccess = callback
       return self
     }
 
     def generateOutput(format OutputFormat) CompilerTest {
-      _outputFormat = Box<OutputFormat>.new(format)
+      _outputEnabled = true
+      _outputOptions.format = format
+      
       return self
     }
   }

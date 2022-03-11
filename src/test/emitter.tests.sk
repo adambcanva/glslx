@@ -149,6 +149,57 @@ export void bar() { float local = global; gl_FragColor = vec4(local + internal);
 }
 ").removeWhitespace.trimSymbols.renameAll.generateOutput(.JSON)
 
+# Test Java code generation
+test("
+uniform float global;
+varying float internal;
+
+export void foo() { float local = global; gl_FragColor = vec4(local + internal); }
+export void bar() { float local = global; gl_FragColor = vec4(local + internal); }
+", "
+public class GLSLXShader {
+private GLSLXShader() {}
+
+public static final String SOURCE_FOO = \"uniform float global;varying float internal;void main(){float local=global;gl_FragColor=vec4(local+internal);}\";
+public static final String SOURCE_BAR = \"uniform float global;varying float internal;void main(){float local=global;gl_FragColor=vec4(local+internal);}\";
+
+public static final String NAME_GLOBAL = \"global\";
+}
+").removeWhitespace.trimSymbols.generateOutput(.JAVA)
+
+# Test Java code generation with renaming
+test("
+uniform float global;
+varying float internal;
+
+export void foo() { float local = global; gl_FragColor = vec4(local + internal); }
+export void bar() { float local = global; gl_FragColor = vec4(local + internal); }
+", "
+public class GLSLXShader {
+private GLSLXShader() {}
+
+public static final String SOURCE_FOO = \"uniform float a;varying float b;void main(){float c=a;gl_FragColor=vec4(c+b);}\";
+public static final String SOURCE_BAR = \"uniform float a;varying float b;void main(){float c=a;gl_FragColor=vec4(c+b);}\";
+
+public static final String NAME_GLOBAL = \"a\";
+}
+").removeWhitespace.trimSymbols.renameAll.generateOutput(.JAVA)
+
+# Test Java code generation with class and package
+test("
+export void vertex() {}
+", "
+package com.test;
+
+public class CustomClass {
+private CustomClass() {}
+
+public static final String SOURCE_VERTEX = \"void main(){}\";
+
+}
+"
+).removeWhitespace.className("CustomClass").packageName("com.test").generateOutput(.JAVA)
+
 # Test C++ code generation
 test("
 uniform float global;
